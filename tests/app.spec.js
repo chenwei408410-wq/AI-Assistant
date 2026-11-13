@@ -1,5 +1,5 @@
 import {test,expect} from '@playwright/test';
-test('手机首页、中文聊天与预留语音入口',async({page})=>{
+test('手机首页、中文聊天与实时语音入口',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('/');await expect(page.getByRole('heading',{name:/让每一天/})).toBeVisible();
  expect(await page.locator('.portrait img').evaluate(i=>i.complete&&i.naturalWidth>0)).toBe(true);
@@ -7,7 +7,7 @@ test('手机首页、中文聊天与预留语音入口',async({page})=>{
  await page.getByLabel('聊天消息').fill('你好');await page.getByLabel('发送消息').click();
  await expect(page.locator('.message.user')).toHaveText('你好');await expect(page.locator('.message.assistant').last()).toContainText('很高兴见到你');
  await page.reload();await page.getByRole('button',{name:'对话',exact:true}).click();await expect(page.locator('.message.user')).toHaveText('你好');
- await page.getByLabel('实时语音（尚未接入）').click();await expect(page.getByRole('dialog')).toContainText('尚未接入');await page.getByRole('button',{name:'知道了'}).click();
+ await page.getByRole('button',{name:'打开实时语音'}).click();await expect(page.getByRole('region',{name:'实时语音控制'})).toContainText('语音访问口令');await expect(page.getByRole('button',{name:'允许麦克风并连接'})).toBeDisabled();
  expect(errors).toEqual([]);
 });
 test('任务添加、完成、持久化与删除',async({page})=>{

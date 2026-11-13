@@ -4,3 +4,6 @@ dist/
 !.env.example
 test-results/
 playwright-report/
+.dev.vars
+.dev.vars.*
+.wrangler/
