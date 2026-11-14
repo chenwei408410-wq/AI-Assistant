@@ -1,1 +1,16 @@
-{"name":"nachuan-finance-render","version":"0.7.0","private":true,"type":"module","engines":{"node":">=24 <27"},"scripts":{"start":"node server.mjs","test":"node --test tests/*.test.mjs"},"dependencies":{"pg":"^8.16.3"}}
+{
+  "name": "company-finance-workbench",
+  "version": "0.7.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24 <27"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test tests/auth.test.mjs tests/core.test.mjs"
+  },
+  "dependencies": {
+    "pg": "^8.16.3"
+  }
+}
