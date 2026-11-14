@@ -8,7 +8,7 @@
   },
   "scripts": {
     "start": "node server.mjs",
-    "test": "node --test tests/auth.test.mjs tests/core.test.mjs"
+    "test": "node --test tests/auth.test.mjs tests/core.test.mjs tests/ean-speed.test.mjs"
   },
   "dependencies": {
     "pg": "^8.16.3"
