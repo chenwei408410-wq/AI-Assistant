@@ -68,3 +68,8 @@ npm run build
 人物仍为 `/secretary.png` 静态图片。`useRealtimeVoice` 通过 `window` 的 `zhiyin:avatar` CustomEvent 提供 `detail.state`：`idle`、`listening`、`speaking`。下一阶段可以订阅这些状态并接入音频分析或音素时间轴，替换人物渲染层，不改变建连流程。WebRTC 声音经远端 MediaStream 播放，不保证数据通道包含音频 delta；精准口型需要单独处理音频分析/时间戳。目前没有实现口型同步或自然表情。
 
 协议参考：[OpenAI WebRTC 指南](https://developers.openai.com/api/docs/guides/realtime-webrtc)、[官方 Calls 实现与类型](https://github.com/openai/openai-node/blob/master/src/resources/realtime/calls.ts)。
+
+
+## 售货机售后正式版
+
+新增中越双语客户入口 `/support.html` 与独立客服工作台 `/support-admin.html`，支持 D1/R2 持久化、Cloudflare Access 客服权限、退款核对与报表。详见 [正式版部署与验收](SUPPORT-PRODUCTION.md)。当前数据库已创建，文件存储和访问授权尚待配置，不能把源码或演示页面当作已上线服务。
