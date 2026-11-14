@@ -1,0 +1,1 @@
+export const config={companies:['测试公司甲','测试公司乙'],ownerName:'测试管理员',units:[{id:'store-a',company:'测试公司甲',name:'测试门店甲',type:'超市'},{id:'store-b',company:'测试公司乙',name:'测试门店乙',type:'超市'}],warehouses:[{id:'warehouse-a',company:'测试公司甲',name:'测试仓甲',targets:['store-a']},{id:'warehouse-b',company:'测试公司乙',name:'测试仓乙',targets:['store-b']}]};
