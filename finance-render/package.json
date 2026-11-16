@@ -8,9 +8,13 @@
   },
   "scripts": {
     "start": "node server.mjs",
-    "test": "node --test tests/auth.test.mjs tests/core.test.mjs tests/ean-speed.test.mjs tests/roles.test.mjs"
+    "test": "node --test tests/auth.test.mjs tests/core.test.mjs tests/ean-speed.test.mjs tests/roles.test.mjs tests/i18n.test.mjs",
+    "test:ui": "node tests/i18n-dom.mjs"
   },
   "dependencies": {
     "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "jsdom": "31.0.1"
   }
 }
