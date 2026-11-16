@@ -1,6 +1,6 @@
 {
   "name": "company-finance-workbench",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -8,7 +8,7 @@
   },
   "scripts": {
     "start": "node server.mjs",
-    "test": "node --test tests/auth.test.mjs tests/core.test.mjs tests/ean-speed.test.mjs"
+    "test": "node --test tests/auth.test.mjs tests/core.test.mjs tests/ean-speed.test.mjs tests/roles.test.mjs"
   },
   "dependencies": {
     "pg": "^8.16.3"
