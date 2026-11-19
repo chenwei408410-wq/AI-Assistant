@@ -1,5 +1,16 @@
 /* Reviewed fixed Chinese–Vietnamese UI vocabulary. User records stay in their original language. */
 (()=>{const dictionary={
+"供货公司设置":"Cài đặt công ty được cung cấp",
+"供货公司":"Công ty được cung cấp",
+"各公司欠款 ₫":"Công nợ từng công ty ₫",
+"请勾选可供货公司":"Chọn các công ty được cung cấp hàng",
+"勾选供应商可供货的公司；采购、期初欠款、自动账期和付款按公司独立核算。取消勾选仅停止新采购，保留历史账目。":"Chọn công ty mà nhà cung cấp có thể cung cấp hàng. Mua hàng, công nợ đầu kỳ, kỳ hạn tự động và thanh toán được hạch toán riêng theo công ty. Bỏ chọn chỉ dừng mua mới, vẫn giữ sổ sách cũ.",
+"共用资料修改会同步关联公司；供货范围请在供货公司设置中勾选，原期初欠款不变。":"Thông tin chung được đồng bộ tới các công ty liên kết. Chọn phạm vi tại Cài đặt công ty được cung cấp; công nợ đầu kỳ cũ không đổi.",
+"商品分类共用；供应商可勾选多家供货公司，账目按公司独立核算。分类停用前须处理仍在使用的启用资料，不删除历史记录。":"Nhóm hàng được dùng chung; nhà cung cấp có thể phục vụ nhiều công ty, sổ sách hạch toán riêng. Xử lý dữ liệu đang dùng trước khi ngừng nhóm; không xóa lịch sử.",
+"导入后可在供货公司设置中勾选其他公司；其他公司的期初欠款不会复制。":"Sau khi nhập, có thể chọn thêm công ty tại Cài đặt công ty được cung cấp; không sao chép công nợ đầu kỳ sang công ty khác.",
+"新增供货公司的期初欠款为0，不复制其他公司余额；原有采购、欠款、付款和独立账期保持不变。取消勾选仅停止新采购，历史结算仍可处理。":"Công nợ đầu kỳ của công ty mới liên kết là 0, không sao chép số dư công ty khác. Mua hàng, công nợ, thanh toán và kỳ hạn riêng hiện có không đổi. Bỏ chọn chỉ dừng mua mới, vẫn xử lý được quyết toán cũ.",
+"仅显示和设置当前账号有权限的公司，其他公司的供货关系保持不变。":"Chỉ hiển thị và cài đặt công ty trong phạm vi quyền; quan hệ cung cấp của công ty khác được giữ nguyên.",
+"供应商已停用或未向该公司供货，不能新建采购":"Nhà cung cấp đã ngừng hoạt động hoặc không cung cấp cho công ty này; không thể mua mới",
 "供应商导入模板":"Mẫu nhập nhà cung cấp",
 "批量导入供应商":"Nhập hàng loạt nhà cung cấp",
 "批量新增供应商":"Thêm hàng loạt nhà cung cấp",
