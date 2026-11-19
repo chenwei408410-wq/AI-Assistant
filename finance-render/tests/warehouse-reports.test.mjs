@@ -28,7 +28,13 @@ test('report UI renders tabs and query actions without mutating business data',(
  context.FormData=class{constructor(form){this.values=form.values}*[Symbol.iterator](){yield*Object.entries(this.values)}};
  const esc=x=>String(x??'').replaceAll('<','&lt;');
  const ui=context.window.warehouseReports({data:()=>data,filter:xs=>xs,today:'2026-11-19',esc,fmt:String,names:id=>id,table:(heads,rows)=>JSON.stringify([heads,rows]),panel:(title,body)=>title+body,button:(label)=>label,render:()=>rendered++,select:x=>selected=x,toast:x=>message=x});
- assert.match(ui.view(),/商品进销存明细/);assert.match(ui.view('ledger'),/商品进出库流水/);const supplierHTML=ui.view('supplier');assert.match(supplierHTML,/供应商供货查询/);assert.match(supplierHTML,/当期进货数量/);assert.match(supplierHTML,/转仓调出数量/);
+ const stockHTML=ui.view();assert.match(stockHTML,/商品进销存明细/);
+ for(const html of [stockHTML,ui.view('ledger'),ui.view('supplier')]){
+   const beforeReport=html.slice(0,html.indexOf('<p class="muted">'));
+   const open=(beforeReport.match(/<div\b/g)||[]).length,closed=(beforeReport.match(/<\/div>/g)||[]).length;
+   assert.equal(open-closed,1,'The report body must be outside the four-column metric cards');
+ }
+ assert.match(ui.view('ledger'),/商品进出库流水/);const supplierHTML=ui.view('supplier');assert.match(supplierHTML,/供应商供货查询/);assert.match(supplierHTML,/当期进货数量/);assert.match(supplierHTML,/转仓调出数量/);
  handlers.click({target:{closest:()=>({dataset:{action:'wr-expand'}})}});assert.match(ui.view(),/warehouse-report-expanded/);
  handlers.submit({target:{id:'warehouse-query',values:{q:'not-found',from:'2026-11-01',to:'2026-11-30'}},preventDefault(){},stopImmediatePropagation(){}});assert.equal(rendered,2);assert.match(ui.view('stock'),/没有符合条件的库存/);
  handlers.click({target:{closest:()=>({dataset:{action:'wr-product',id:'tea|a'}})}});assert.equal(selected,'ledger');
