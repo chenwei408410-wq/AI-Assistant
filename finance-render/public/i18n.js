@@ -1,5 +1,6 @@
 /* Reviewed fixed Chinese–Vietnamese UI vocabulary. User records stay in their original language. */
 (()=>{const dictionary={
+"总管理员账号受保护，此处仅查看资料。":"Tài khoản quản trị viên chính được bảo vệ; tại đây chỉ xem thông tin.",
 "供货公司设置":"Cài đặt công ty được cung cấp",
 "供货公司":"Công ty được cung cấp",
 "各公司欠款 ₫":"Công nợ từng công ty ₫",
