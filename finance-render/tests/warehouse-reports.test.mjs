@@ -14,6 +14,11 @@ test('historical period reconciles opening, movement and ending without mixing w
 test('supplier query isolates receipts and supplier returns while preserving total related-product stock',()=>{
  const r=report(fixture(),{supplier:'s1',from:'2026-11-01',to:'2026-11-30'});assert.equal(r.rows.length,1);assert.equal(r.rows[0].ending,125);assert.equal(r.ledger.length,2);assert(r.ledger.every(m=>m.supplier==='s1'));assert.equal(r.ledger[0].kind,'供应商退货');assert.equal(r.ledger[0].balance,125);
 });
+test('period quantities distinguish purchases, dispatch, both returns and transfer directions',()=>{
+ const d=fixture();d.stockReturns=[{id:'store-return',unit:'store-a'}];d.stockTransfers=[{id:'transfer-in'},{id:'transfer-out'}];
+ d.warehouseHistory.push({location:'wh:a',product:'tea',qty:3,value:30,date:'2026-11-07',source:'receive-return',document:'store-return'},{location:'wh:a',product:'tea',qty:8,value:80,date:'2026-11-08',source:'transfer-in'},{location:'wh:a',product:'tea',qty:-4,value:-40,date:'2026-11-09',source:'transfer-out'});d.stocks[0].qty+=7;d.stocks[0].value+=70;
+ const r=report(d,{warehouse:'a',from:'2026-11-01',to:'2026-11-30'}),x=r.rows[0];assert.equal(x.purchaseQty,36);assert.equal(x.outboundQty,10);assert.equal(x.storeReturnQty,3);assert.equal(x.supplierReturnQty,1);assert.equal(x.transferIn,8);assert.equal(x.transferOut,4);assert.equal(x.otherNet,0);assert.equal(x.ending,x.opening+x.purchaseQty-x.outboundQty+x.storeReturnQty-x.supplierReturnQty+x.transferIn-x.transferOut+x.otherNet);assert.equal(r.transfersAvailable,true);assert.equal(report(fixture(),{}).transfersAvailable,false);
+});
 test('product search accepts name, SKU and barcode and empty results stay empty',()=>{
  for(const q of ['乌龙','t1','123'])assert.equal(report(fixture(),{q}).rows.length,1);assert.equal(report(fixture(),{q:'not-found'}).rows.length,0);assert.equal(report(fixture(),{product:'rice'}).rows[0].ending,10);
 });
@@ -23,8 +28,9 @@ test('report UI renders tabs and query actions without mutating business data',(
  context.FormData=class{constructor(form){this.values=form.values}*[Symbol.iterator](){yield*Object.entries(this.values)}};
  const esc=x=>String(x??'').replaceAll('<','&lt;');
  const ui=context.window.warehouseReports({data:()=>data,filter:xs=>xs,today:'2026-11-19',esc,fmt:String,names:id=>id,table:(heads,rows)=>JSON.stringify([heads,rows]),panel:(title,body)=>title+body,button:(label)=>label,render:()=>rendered++,select:x=>selected=x,toast:x=>message=x});
- assert.match(ui.view(),/商品进销存明细/);assert.match(ui.view('ledger'),/商品进出库流水/);assert.match(ui.view('supplier'),/供应商供货查询/);
- handlers.submit({target:{id:'warehouse-query',values:{q:'not-found',from:'2026-11-01',to:'2026-11-30'}},preventDefault(){},stopImmediatePropagation(){}});assert.equal(rendered,1);assert.match(ui.view('stock'),/没有符合条件的库存/);
+ assert.match(ui.view(),/商品进销存明细/);assert.match(ui.view('ledger'),/商品进出库流水/);const supplierHTML=ui.view('supplier');assert.match(supplierHTML,/供应商供货查询/);assert.match(supplierHTML,/当期进货数量/);assert.match(supplierHTML,/转仓调出数量/);
+ handlers.click({target:{closest:()=>({dataset:{action:'wr-expand'}})}});assert.match(ui.view(),/warehouse-report-expanded/);
+ handlers.submit({target:{id:'warehouse-query',values:{q:'not-found',from:'2026-11-01',to:'2026-11-30'}},preventDefault(){},stopImmediatePropagation(){}});assert.equal(rendered,2);assert.match(ui.view('stock'),/没有符合条件的库存/);
  handlers.click({target:{closest:()=>({dataset:{action:'wr-product',id:'tea|a'}})}});assert.equal(selected,'ledger');
  handlers.submit({target:{id:'warehouse-query',values:{from:'2026-12-01',to:'2026-11-01'}},preventDefault(){},stopImmediatePropagation(){}});assert.equal(message,'开始日期不能晚于结束日期');assert.equal(JSON.stringify(data),before);
 });

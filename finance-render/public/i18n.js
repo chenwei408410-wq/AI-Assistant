@@ -1,5 +1,17 @@
 /* Reviewed fixed Chinese–Vietnamese UI vocabulary. User records stay in their original language. */
 (()=>{const dictionary={
+"全屏查看":"Xem toàn màn hình",
+"退出全屏":"Thoát toàn màn hình",
+"当期进货数量":"Số lượng nhập mua trong kỳ",
+"当期出库数量":"Số lượng xuất trong kỳ",
+"门店退回数量":"Số lượng cửa hàng trả về",
+"退供应商数量":"Số lượng trả nhà cung cấp",
+"转仓调入数量":"Số lượng chuyển kho đến",
+"转仓调出数量":"Số lượng chuyển kho đi",
+"其他调整净数量":"Số lượng điều chỉnh thuần khác",
+"转仓":"Chuyển kho",
+"未接入转仓记录":"Chưa kết nối dữ liệu chuyển kho",
+"结存 = 期初 + 进货 − 出库 + 门店退回 − 退供应商 + 转仓调入 − 转仓调出 + 其他调整。未接入的转仓数据以“—”表示。":"Tồn cuối = tồn đầu + nhập mua − xuất + cửa hàng trả về − trả nhà cung cấp + chuyển đến − chuyển đi + điều chỉnh khác. Dữ liệu chuyển kho chưa kết nối hiển thị “—”.",
 "进销存总览":"Tổng quan nhập xuất tồn",
 "商品流水":"Lịch sử sản phẩm",
 "供应商查询":"Tra cứu nhà cung cấp",

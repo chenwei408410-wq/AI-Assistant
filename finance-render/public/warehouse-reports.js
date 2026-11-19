@@ -5,17 +5,20 @@ window.warehouseReportData = function(data, filters = {}) {
   const records = new Map();
   const add = (key, detail) => { if (key) records.set(key, detail); };
   for (const p of data.purchases || []) {
-    const detail = {kind:'采购入库', supplier:p.supplier, reference:p.source || p.id};
+    const detail = {kind:'采购入库', category:'purchase', supplier:p.supplier, reference:p.source || p.id};
     add(p.id, detail);
     for (const batch of p.batches || []) add(batch.id, detail);
   }
-  for (const s of data.shipments || []) add(s.id, {kind:'配送出库', reference:s.id, unit:s.unit});
-  for (const r of data.stockReturns || []) add(r.id, {kind:'门店退仓', reference:r.source || r.id, unit:r.unit});
-  for (const r of data.supplierReturns || []) add(r.id, {kind:'供应商退货', supplier:r.supplier, reference:r.id});
-  for (const c of data.counts || []) add(c.id, {kind:'盘点调整', reference:c.id});
+  for (const s of data.shipments || []) add(s.id, {kind:'配送出库', category:'dispatch', reference:s.id, unit:s.unit});
+  for (const r of data.stockReturns || []) add(r.id, {kind:'门店退仓', category:'storeReturn', reference:r.source || r.id, unit:r.unit});
+  for (const r of data.supplierReturns || []) add(r.id, {kind:'供应商退货', category:'supplierReturn', supplier:r.supplier, reference:r.id});
+  for (const c of data.counts || []) add(c.id, {kind:'盘点调整', category:'adjustment', reference:c.id});
+  const transfers = data.stockTransfers || data.warehouseTransfers;
+  for (const t of transfers || []) add(t.id, {kind:'转仓', category:'transfer', reference:t.source || t.id});
   const moves = (data.warehouseHistory || data.stockMoves || []).filter(m => m.location.startsWith('wh:') && warehouses.has(m.location.slice(3))).map((m, index) => {
     const info = records.get(m.document || m.source) || records.get(m.source) || {kind:m.qty >= 0 ? '其他入库 / 期初' : '其他出库', reference:m.source};
-    return {...m, ...info, index, warehouse:m.location.slice(3)};
+    const transfer = info.category==='transfer' || m.type==='transfer' || m.kind==='transfer';
+    return {...m, ...info, ...(transfer?{kind:'转仓',category:'transfer'}:{}), index, warehouse:m.location.slice(3)};
   });
   const related = new Set((data.purchases || []).filter(p => p.supplier === filters.supplier && (!filters.warehouse || p.warehouse === filters.warehouse)).flatMap(p => p.lines.map(l => l.product)));
   const products = (data.products || []).filter(p => (!filters.product || p.id === filters.product) && (!filters.supplier || related.has(p.id)) && (!filters.q || [p.sku,p.name,p.barcode,p.spec].some(v => String(v || '').toLocaleLowerCase().includes(filters.q.toLocaleLowerCase()))));
@@ -30,8 +33,12 @@ window.warehouseReportData = function(data, filters = {}) {
     const ending = s.qty - ms.filter(m => filters.to && m.date > filters.to).reduce((n,m) => n+m.qty,0);
     const incoming = period.filter(m => m.qty > 0).reduce((n,m) => n+m.qty,0);
     const outgoing = -period.filter(m => m.qty < 0).reduce((n,m) => n+m.qty,0);
+    const amount = (category,positive) => period.filter(m=>m.category===category&&(positive?m.qty>0:m.qty<0)).reduce((n,m)=>n+Math.abs(m.qty),0);
+    const purchaseQty=amount('purchase',true),outboundQty=amount('dispatch',false),storeReturnQty=amount('storeReturn',true)+amount('dispatch',true),supplierReturnQty=amount('supplierReturn',false);
+    const transferIn=amount('transfer',true),transferOut=amount('transfer',false);
+    const otherNet=period.reduce((n,m)=>n+m.qty,0)-purchaseQty+outboundQty-storeReturnQty+supplierReturnQty-transferIn+transferOut;
     const value = (s.value || 0) - ms.filter(m => filters.to && m.date > filters.to).reduce((n,m) => n+(m.value || 0),0);
-    return {...s, opening:ending-incoming+outgoing, incoming, outgoing, ending, value};
+    return {...s, opening:ending-incoming+outgoing, incoming, outgoing, purchaseQty, outboundQty, storeReturnQty, supplierReturnQty, transferIn, transferOut, otherNet, ending, value};
   });
   const ledger = [];
   for (const m of [...selected].sort((a,b) => b.date.localeCompare(a.date) || b.index-a.index)) {
@@ -39,12 +46,12 @@ window.warehouseReportData = function(data, filters = {}) {
     if (inPeriod(m) && (!filters.supplier || m.supplier === filters.supplier)) ledger.push({...m, balance:balance.qty});
     balance.qty -= m.qty; balance.value -= m.value || 0; balances.set(key,balance);
   }
-  return {products, rows, ledger, suppliers, related};
+  return {products, rows, ledger, suppliers, related, transfersAvailable:Array.isArray(transfers)||moves.some(m=>m.category==='transfer')};
 };
 
 window.warehouseReports = function(ctx) {
   const {esc,fmt,panel,table,button} = ctx, root = document.getElementById('finance-root');
-  let filters = {q:'',warehouse:'',supplier:'',product:'',from:'',to:''}, selectedMonth = '', mode = 'stock';
+  let filters = {q:'',warehouse:'',supplier:'',product:'',from:'',to:''}, selectedMonth = '', mode = 'stock', expanded=false;
   const labels = {q:'商品名称 / 编码 / 条码',warehouse:'仓库',supplier:'供应商',product:'商品',from:'开始日期',to:'结束日期'};
   const quantity = (n,p) => {
     const unit = p?.baseUnit || '', rate = Number(p?.packRate);
@@ -76,11 +83,19 @@ window.warehouseReports = function(ctx) {
     } else if (mode==='supplier') {
       const suppliers=report.suppliers.filter(s=>!filters.supplier||s.id===filters.supplier);
       html+=panel('供应商供货查询',suppliers.length?table(['供应商','公司','供货商品数','本期到货记录','操作'],suppliers.map(s=>[esc(s.name),esc(s.company),fmt(new Set((data.purchases||[]).filter(p=>p.supplier===s.id&&(!filters.warehouse||p.warehouse===filters.warehouse)).flatMap(p=>p.lines.map(l=>l.product))).size),fmt(report.ledger.filter(m=>m.supplier===s.id&&m.kind==='采购入库').length),button('查看供货与流水','wr-supplier',s.id)])):'<p class="empty">没有符合条件的供应商</p>');
+      html+=productTable(report,data);
       if(filters.supplier) html+=ledgerPreview(report);
     } else {
-      html+=panel('商品进销存明细',report.rows.length?table(['仓库','商品 / 编码','期初数量','本期入库','本期出库','期末结存',...(data.costAccess?['期末库存金额 ₫']:[]),'操作'],report.rows.map(r=>[esc(W(r.location.slice(3))),'<strong>'+esc(P(r.product)?.name||r.product)+'</strong><small>'+esc(P(r.product)?.sku||'')+'</small>',quantity(r.opening,P(r.product)),quantity(r.incoming,P(r.product)),quantity(r.outgoing,P(r.product)),'<strong>'+quantity(r.ending,P(r.product))+'</strong>',...(data.costAccess?[fmt(r.value)]:[]),button('查看流水','wr-product',r.product+'|'+r.location.slice(3))])):'<p class="empty">没有符合条件的库存，请调整筛选条件</p>',button('查看全部流水','wr-ledger'));
+      html+=productTable(report,data);
     }
-    return '<div class="warehouse-report">'+html+'</div>';
+    return '<div class="warehouse-report'+(expanded?' warehouse-report-expanded':'')+'"><div class="warehouse-report-tools">'+button(expanded?'退出全屏':'全屏查看','wr-expand')+'</div>'+html+'</div>';
+  }
+  function productTable(report,data) {
+    const body=report.rows.length?table(['仓库','商品 / 编码','期初数量','当期进货数量','当期出库数量','门店退回数量','退供应商数量','转仓调入数量','转仓调出数量','其他调整净数量','期末结存',...(data.costAccess?['期末库存金额 ₫']:[]),'操作'],report.rows.map(r=>{
+      const p=P(r.product),q=n=>quantity(n,p),transfer=n=>report.transfersAvailable?q(n):'<span title="未接入转仓记录">—</span>';
+      return [esc(W(r.location.slice(3))),'<strong>'+esc(p?.name||r.product)+'</strong><small>'+esc(p?.sku||'')+'</small>',q(r.opening),q(r.purchaseQty),q(r.outboundQty),q(r.storeReturnQty),q(r.supplierReturnQty),transfer(r.transferIn),transfer(r.transferOut),q(r.otherNet),'<strong>'+q(r.ending)+'</strong>',...(data.costAccess?[fmt(r.value)]:[]),button('查看流水','wr-product',r.product+'|'+r.location.slice(3))];
+    })):'<p class="empty">没有符合条件的库存，请调整筛选条件</p>';
+    return panel('商品进销存明细',body+'<p class="muted">'+esc('结存 = 期初 + 进货 − 出库 + 门店退回 − 退供应商 + 转仓调入 − 转仓调出 + 其他调整。未接入的转仓数据以“—”表示。')+'</p>',button('查看全部流水','wr-ledger'));
   }
   function ledgerPreview(report) { return panel('供应商到货与退货明细',report.ledger.length?table(['日期','业务 / 单号','商品','数量','仓库'],report.ledger.map(m=>[esc(m.date),esc(m.kind)+'<small>'+esc(m.reference)+'</small>',esc(P(m.product)?.name||m.product),quantity(Math.abs(m.qty),P(m.product)),esc(W(m.warehouse))])):'<p class="empty">该期间没有到货或退货记录</p>'); }
   root.addEventListener('submit',event=>{
@@ -93,6 +108,7 @@ window.warehouseReports = function(ctx) {
   root.addEventListener('click',event=>{
     const b=event.target.closest('button[data-action]');if(!b?.dataset.action.startsWith('wr-'))return;
     const action=b.dataset.action.slice(3);
+    if(action==='expand')expanded=!expanded;
     if(action==='reset'){filters={q:'',warehouse:'',supplier:'',product:'',from:'',to:''};selectedMonth='';}
     if(action==='product'){const [product,warehouse]=b.dataset.id.split('|');filters.product=product;filters.warehouse=warehouse;ctx.select('ledger');}
     if(action==='supplier'){filters.supplier=b.dataset.id;filters.product='';filters.q='';}
