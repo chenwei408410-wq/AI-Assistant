@@ -38,7 +38,7 @@ window.warehouseReportData = function(data, filters = {}) {
     const transferIn=amount('transfer',true),transferOut=amount('transfer',false);
     const otherNet=period.reduce((n,m)=>n+m.qty,0)-purchaseQty+outboundQty-storeReturnQty+supplierReturnQty-transferIn+transferOut;
     const value = (s.value || 0) - ms.filter(m => filters.to && m.date > filters.to).reduce((n,m) => n+(m.value || 0),0);
-    return {...s, opening:ending-incoming+outgoing, incoming, outgoing, purchaseQty, outboundQty, storeReturnQty, supplierReturnQty, transferIn, transferOut, otherNet, ending, value};
+    const currencies=new Set([...(s.values||[]).map(v=>v.currency),...ms.map(m=>m.currency||null)]);const values=[...currencies].map(currency=>({currency,value:(s.values?s.values.filter(v=>v.currency===currency).reduce((n,v)=>n+v.value,0):(s.currency||null)===currency?s.value||0:0)-ms.filter(m=>filters.to&&m.date>filters.to&&(m.currency||null)===currency).reduce((n,m)=>n+(m.value||0),0)}));return {...s,values, opening:ending-incoming+outgoing, incoming, outgoing, purchaseQty, outboundQty, storeReturnQty, supplierReturnQty, transferIn, transferOut, otherNet, ending, value};
   });
   const ledger = [];
   for (const m of [...selected].sort((a,b) => b.date.localeCompare(a.date) || b.index-a.index)) {
@@ -91,9 +91,9 @@ window.warehouseReports = function(ctx) {
     return '<div class="warehouse-report'+(expanded?' warehouse-report-expanded':'')+'"><div class="warehouse-report-tools">'+button(expanded?'退出全屏':'全屏查看','wr-expand')+'</div>'+html+'</div>';
   }
   function productTable(report,data) {
-    const body=report.rows.length?table(['仓库','商品 / 编码','期初数量','当期进货数量','当期出库数量','门店退回数量','退供应商数量','转仓调入数量','转仓调出数量','其他调整净数量','期末结存',...(data.costAccess?['期末库存金额 ₫']:[]),'操作'],report.rows.map(r=>{
+    const body=report.rows.length?table(['仓库','商品 / 编码','期初数量','当期进货数量','当期出库数量','门店退回数量','退供应商数量','转仓调入数量','转仓调出数量','其他调整净数量','期末结存',...(data.costAccess?['期末库存金额 / 币种']:[]),'操作'],report.rows.map(r=>{
       const p=P(r.product),q=n=>quantity(n,p),transfer=n=>report.transfersAvailable?q(n):'<span title="未接入转仓记录">—</span>';
-      return [esc(W(r.location.slice(3))),'<strong>'+esc(p?.name||r.product)+'</strong><small>'+esc(p?.sku||'')+'</small>',q(r.opening),q(r.purchaseQty),q(r.outboundQty),q(r.storeReturnQty),q(r.supplierReturnQty),transfer(r.transferIn),transfer(r.transferOut),q(r.otherNet),'<strong>'+q(r.ending)+'</strong>',...(data.costAccess?[fmt(r.value)]:[]),button('查看流水','wr-product',r.product+'|'+r.location.slice(3))];
+      return [esc(W(r.location.slice(3))),'<strong>'+esc(p?.name||r.product)+'</strong><small>'+esc(p?.sku||'')+'</small>',q(r.opening),q(r.purchaseQty),q(r.outboundQty),q(r.storeReturnQty),q(r.supplierReturnQty),transfer(r.transferIn),transfer(r.transferOut),q(r.otherNet),'<strong>'+q(r.ending)+'</strong>',...(data.costAccess?[(r.values||[{value:r.value,currency:r.currency}]).map(v=>window.financeMoney?.format(v.value,v.currency)||fmt(v.value)).join('<br>')]:[]),button('查看流水','wr-product',r.product+'|'+r.location.slice(3))];
     })):'<p class="empty">没有符合条件的库存，请调整筛选条件</p>';
     return panel('商品进销存明细',body+'<p class="muted">'+esc('结存 = 期初 + 进货 − 出库 + 门店退回 − 退供应商 + 转仓调入 − 转仓调出 + 其他调整。未接入的转仓数据以“—”表示。')+'</p>',button('查看全部流水','wr-ledger'));
   }

@@ -16,5 +16,5 @@ test('dynamic group, approval stages, CSV row errors and amounts retain their nu
  const {i18n}=setup('vi');assert.equal(i18n.t('第4组'),'Nhóm 4');assert.equal(i18n.t('第2级审批人'),'Người duyệt cấp 2');assert.equal(i18n.t('第15行：商品编码重复 ABC'),'Dòng 15：Trùng mã hàng ABC');assert.equal(i18n.t('核对到账 / 现金交款：1,500,000 ₫'),'Đối soát tiền nhận / nộp tiền mặt:1,500,000 ₫');
 });
 test('i18n is served before authentication and all application modules; translation has no remote calls',()=>{
- const app=readFileSync(new URL('../app.mjs',import.meta.url),'utf8');assert(app.includes("'finance.css','i18n.js','finance.js'"));assert(app.includes('<script src="/i18n.js" defer></script><script src="/auth.js" defer>'));assert(app.includes("['i18n.js','scanner.js'"));assert(!/\bfetch\s*\(/.test(source));assert(!/\.innerHTML\s*=/.test(source));
+ const app=readFileSync(new URL('../app.mjs',import.meta.url),'utf8');assert(app.includes("'finance.css','i18n.js','finance.js'"));assert(app.includes('<script src="/i18n.js" defer></script><script src="/auth.js" defer>'));assert(app.includes("['i18n.js','finance-ledger-ui.js','scanner.js'"));assert(!/\bfetch\s*\(/.test(source));assert(!/\.innerHTML\s*=/.test(source));
 });
